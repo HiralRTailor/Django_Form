@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+  {% csrf_token %}
+  <title>User Info Form</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    /* Additional CSS styles */
+    body {
+      background: url('https://images.pexels.com/photos/531880/pexels-photo-531880.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1') no-repeat center center fixed;
+      background-size: cover;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 100px auto;
+      padding: 30px;
+      background-color: rgba(255, 255, 255, 0.8);
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .container h2 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="tel"],
+    .form-group input[type="email"],
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+
+    .form-group .profile-pic {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .form-group .profile-pic img {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .form-group input[type="file"] {
+      display: none;
+    }
+
+    .form-group .upload-btn {
+      display: inline-block;
+      padding: 8px 12px;
+      background-color: #4CAF50;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .form-group .upload-btn:hover {
+      background-color: #45a049;
+    }
+
+    .form-group .upload-btn:active {
+      background-color: #3c903d;
+    }
+
+    .form-group .upload-btn:focus {
+      outline: none;
+    }
+
+    .error-message {
+      color: red;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+
+    .success-message {
+      color: green;
+      font-size: 16px;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    .container h2 {
+      font-family: "Arial", sans-serif;
+      color: #333;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 28px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .success-popup {
+      position: fixed;
+      top: 10%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 9999;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      font-size: 18px;
+      font-weight: bold;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>User Information</h2>
+    <form id="userForm" enctype="multipart/form-data" onsubmit="return validateForm()">
+      <div class="form-group">
+        <label for="firstName">First Name:</label>
+        <input type="text" id="firstName" name="firstName" class="form-control" required>
+        <span id="firstNameError" class="error-message"></span>
+      </div>
+
+      <div class="form-group">
+        <label for="lastName">Last Name:</label>
+        <input type="text" id="lastName" name="lastName" class="form-control" required>
+        <span id="lastNameError" class="error-message"></span>
+      </div>
+
+      <div class="form-group">
+        <label for="phoneNumber">Phone Number:</label>
+        <input type="tel" id="phoneNumber" name="phoneNumber" class="form-control" required>
+        <span id="phoneNumberError" class="error-message"></span>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email ID:</label>
+        <input type="email" id="email" name="email" class="form-control" required>
+        <span id="emailError" class="error-message"></span>
+      </div>
+
+      <div class="form-group">
+        <label for="address">Address:</label>
+        <textarea id="address" name="address" class="form-control" required></textarea>
+        <span id="addressError" class="error-message"></span>
+      </div>
+
+      <div class="form-group">
+        <label for="profilePic">Profile Picture:</label>
+        <input type="file" id="profilePic" name="profilePic" accept="image/*" onchange="displayProfilePic(event)">
+        <label for="profilePic" class="upload-btn">Upload Picture</label>
+        <span id="uploadedPic" class="profile-pic"></span>
+        <span id="profilePicError" class="error-message"></span>
+      </div>
+
+      <div class="form-group">
+        <input type="submit" value="Submit" class="btn btn-primary">
+      </div>
+    </form>
+  </div>
+  <div id="successPopup" class="success-popup">
+    <p>Successfully submitted the form.</p>
+  </div>
+ 
+  <script>
+    var form = document.getElementById("userForm");
+    var successPopup = document.getElementById("successPopup");
+    form.addEventListener("submit", function(event) {
+      event.preventDefault();
+      if (validateForm()) {
+        var formData = new FormData(form);
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "{% url 'save_user_info' %}");
+        // Get the CSRF token from the hidden input field
+        var csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+        // Set the CSRF token as a request header
+        xhr.setRequestHeader("X-CSRFToken", csrfToken);
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4 && xhr.status === 200) {
+            // document.getElementById("successMessage").textContent = "Successfully submitted the form.";
+            // document.getElementById("successMessage").style.display = "block";
+            // Show the success popup
+            successPopup.style.display = "block";
+
+            // Hide the success popup after 3 seconds
+            setTimeout(function() {
+              successPopup.style.display = "none";
+            }, 3000);
+            form.reset();
+
+            clearUploadedPic();
+          }
+        };
+        xhr.send(formData);
+      }
+    });
+
+    function clearUploadedPic() {
+      document.getElementById("uploadedPic").innerHTML = "";
+    }
+
+    function validateForm() {
+      var isValid = true;
+      // Reset error messages
+      document.getElementById("firstNameError").textContent = "";
+      document.getElementById("lastNameError").textContent = "";
+      document.getElementById("phoneNumberError").textContent = "";
+      document.getElementById("emailError").textContent = "";
+      document.getElementById("addressError").textContent = "";
+      document.getElementById("profilePicError").textContent = "";
+
+      // Validate first name
+      var firstName = document.getElementById("firstName").value.trim();
+      if (firstName === "") {
+        document.getElementById("firstNameError").textContent = "First name is required.";
+        isValid = false;
+      }
+
+      // Validate last name
+      var lastName = document.getElementById("lastName").value.trim();
+      if (lastName === "") {
+        document.getElementById("lastNameError").textContent = "Last name is required.";
+        isValid = false;
+      }
+
+      // Validate phone number
+      var phoneNumber = document.getElementById("phoneNumber").value.trim();
+      var phoneRegex = /^[0-9]{10}$/; // 10 digits numeric format
+      if (phoneNumber === "" || !phoneRegex.test(phoneNumber)) {
+        document.getElementById("phoneNumberError").textContent = "Please enter a valid phone number (10 digits).";
+        isValid = false;
+      }
+
+      // Validate email
+      var email = document.getElementById("email").value.trim();
+      var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email format check
+      if (email === "" || !emailRegex.test(email)) {
+        document.getElementById("emailError").textContent = "Please enter a valid email address.";
+        isValid = false;
+      }
+
+      // Validate address
+      var address = document.getElementById("address").value.trim();
+      if (address === "") {
+        document.getElementById("addressError").textContent = "Address is required.";
+        isValid = false;
+      }
+
+      // Validate profile picture
+      var profilePic = document.getElementById("profilePic").value;
+      if (profilePic === "") {
+        document.getElementById("profilePicError").textContent = "Please upload a profile picture.";
+        isValid = false;
+      }
+
+      return isValid;
+    }
+    //Display Profile Pic
+    function displayProfilePic(event) {
+      var file = event.target.files[0];
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var img = document.createElement("img");
+        img.src = e.target.result;
+        document.getElementById("uploadedPic").innerHTML = "";
+        document.getElementById("uploadedPic").appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    }
+  </script>
+</body>
+</html>
